@@ -1,9 +1,21 @@
 /* ==========================================================================
    DYNAMIC ENVIRONMENT PATH RESOLVER
    ========================================================================== */
-// VS Code Live Server defaults to port 5500, or pathname may contain '/public/'
-const isLiveServer = window.location.port === '5500' || window.location.pathname.includes('/public/');
-const BASE_PATH = isLiveServer ? '/public' : '';
+(() => {
+// Determine base path dynamically for different environments (Live Server, GitHub Pages, Vite)
+let basePath = '';
+const pathSegments = window.location.pathname.split('/');
+
+// Detect if running inside a subfolder (e.g. GitHub Pages repo like /map-collection/ or VS Code Live Server /public/)
+if (pathSegments.length > 2 || (pathSegments.length === 2 && pathSegments[1] !== '' && !pathSegments[1].endsWith('.html') && !pathSegments[1].endsWith('.js'))) {
+  const firstFolder = pathSegments[1];
+  if (firstFolder && firstFolder !== 'index.html' && firstFolder !== 'dist') {
+    basePath = '/' + firstFolder;
+  }
+}
+
+const isLiveServer = window.location.port === '5500';
+const BASE_PATH = isLiveServer ? '/public' : basePath;
 
 function getAssetUrl(path) {
   if (!path) return '';
@@ -30,8 +42,23 @@ let filteredMaps = [];
 
 const state = {
   searchQuery: '',
-  sortBy: 'newest' // 'newest', 'name-asc', 'name-desc', 'size-desc', 'size-asc'
+  sortBy: 'newest', // 'newest', 'name-asc', 'name-desc', 'size-desc', 'size-asc'
+  currentPage: 1,
+  itemsPerPage: 10
 };
+
+// AbortController for bfcache compatibility
+let fetchController = null;
+
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+}
 
 // Pan & Zoom Engine State
 const zoomState = {
@@ -103,6 +130,18 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 });
 
+// Abort in-flight requests on page hide to allow bfcache restoration
+window.addEventListener('pagehide', () => {
+  if (fetchController) fetchController.abort();
+});
+
+// Re-initialize when page is restored from bfcache
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    fetchCatalog();
+  }
+});
+
 /* --------------------------------------------------------------------------
    Theme & LocalStorage Persistence
    -------------------------------------------------------------------------- */
@@ -133,8 +172,12 @@ function updateThemeLogos(theme) {
    Data Catalog Operations
    -------------------------------------------------------------------------- */
 async function fetchCatalog() {
+  // Abort any previous in-flight request
+  if (fetchController) fetchController.abort();
+  fetchController = new AbortController();
+
   try {
-    const response = await fetch(getAssetUrl('/maps.json'));
+    const response = await fetch(getAssetUrl('/maps.json'), { signal: fetchController.signal });
     if (!response.ok) throw new Error('Failed to load map catalog');
     mapsList = await response.json();
     
@@ -148,6 +191,7 @@ async function fetchCatalog() {
     // Process deep linked hash routes on page load
     handleInitialHashRoute();
   } catch (error) {
+    if (error.name === 'AbortError') return; // Intentional abort, do not log
     console.error('Error fetching maps catalog:', error);
     DOM.catalogStats.innerHTML = `<span style="color: var(--badge-pdf-text)">Error loading map catalog. Please make sure maps.json exists.</span>`;
   }
@@ -165,6 +209,10 @@ function applyFilters() {
 
   // Sorting
   sortFilteredMaps();
+  
+  // Reset pagination
+  state.currentPage = 1;
+  DOM.mapsGrid.innerHTML = ''; // clear grid before rendering first page
   
   // Render
   renderGallery();
@@ -208,8 +256,6 @@ function updateStats() {
    UI RENDERING (GALLERY GRID & THUMBNAILS)
    ========================================================================== */
 function renderGallery() {
-  DOM.mapsGrid.innerHTML = '';
-  
   if (filteredMaps.length === 0) {
     DOM.mapsGrid.style.display = 'none';
     DOM.emptyState.style.display = 'flex';
@@ -219,10 +265,17 @@ function renderGallery() {
   DOM.mapsGrid.style.display = 'grid';
   DOM.emptyState.style.display = 'none';
   
-  filteredMaps.forEach((map, index) => {
+  const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+  const endIndex = startIndex + state.itemsPerPage;
+  const pageMaps = filteredMaps.slice(startIndex, endIndex);
+  
+  const fragment = document.createDocumentFragment();
+  
+  pageMaps.forEach((map, index) => {
     const card = document.createElement('div');
     card.className = 'map-card';
-    card.setAttribute('data-index', index);
+    card.setAttribute('data-index', startIndex + index);
+    card.mapData = map; // Store map data for event delegation
     
     // Format badge (PNG, JPG, etc.)
     const badgeText = map.type.toUpperCase();
@@ -232,10 +285,10 @@ function renderGallery() {
     card.innerHTML = `
       <div class="card-thumbnail-wrapper">
         <span class="card-badge badge-png">${badgeText}</span>
-        <img src="${resolvedThumbUrl}" alt="${map.title}" class="card-thumbnail-img" loading="lazy">
+        <img alt="${map.title}" class="card-thumbnail-img" ${startIndex + index < 4 ? 'fetchpriority="high"' : 'loading="lazy"'}>
       </div>
       <div class="card-body">
-        <h3 class="card-title">${map.title}</h3>
+        <h2 class="card-title">${map.title}</h2>
         <div class="card-meta">
           <div class="card-size-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -248,18 +301,16 @@ function renderGallery() {
       </div>
     `;
     
-    // Zoom Viewer triggers on clicking card (except download button)
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('.card-download-btn')) {
-        const downloadBtn = e.target.closest('.card-download-btn');
-        triggerDownload(downloadBtn.dataset.url, downloadBtn.dataset.filename);
-        return;
-      }
-      openViewer(map);
-    });
+    const img = card.querySelector('.card-thumbnail-img');
+    img.onload = () => {
+      img.classList.add('loaded');
+    };
+    img.src = resolvedThumbUrl;
     
-    DOM.mapsGrid.appendChild(card);
+    fragment.appendChild(card);
   });
+  
+  DOM.mapsGrid.appendChild(fragment);
 }
 
 function triggerDownload(url, filename) {
@@ -459,7 +510,7 @@ function setupEventListeners() {
   });
 
   // --- Filtering & Searching Inputs ---
-  DOM.searchInput.addEventListener('input', (e) => {
+  const handleSearchInput = debounce((e) => {
     state.searchQuery = e.target.value;
     if (state.searchQuery) {
       DOM.clearSearch.style.display = 'block';
@@ -467,7 +518,9 @@ function setupEventListeners() {
       DOM.clearSearch.style.display = 'none';
     }
     applyFilters();
-  });
+  }, 300);
+
+  DOM.searchInput.addEventListener('input', handleSearchInput);
   
   DOM.clearSearch.addEventListener('click', () => {
     DOM.searchInput.value = '';
@@ -489,6 +542,34 @@ function setupEventListeners() {
     state.sortBy = 'newest';
     applyFilters();
   });
+
+  // --- Event Delegation for Maps Grid ---
+  DOM.mapsGrid.addEventListener('click', (e) => {
+    const downloadBtn = e.target.closest('.card-download-btn');
+    if (downloadBtn) {
+      triggerDownload(downloadBtn.dataset.url, downloadBtn.dataset.filename);
+      return;
+    }
+    
+    const card = e.target.closest('.map-card');
+    if (card && card.mapData) {
+      openViewer(card.mapData);
+    }
+  });
+
+  // --- Intersection Observer for Infinite Scroll ---
+  const scrollSentinel = document.getElementById('scroll-sentinel');
+  if (scrollSentinel) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        if (state.currentPage * state.itemsPerPage < filteredMaps.length) {
+          state.currentPage++;
+          renderGallery();
+        }
+      }
+    }, { rootMargin: '200px' });
+    observer.observe(scrollSentinel);
+  }
   
   // --- Zoom Modal Control Handles ---
   DOM.closeZoomBtn.addEventListener('click', closeViewer);
@@ -538,24 +619,31 @@ function setupEventListeners() {
   window.addEventListener('mouseup', stopPanDrag);
   
   // Mouse Scroll Wheel Zoom (Fitted to Cursor Focus)
+  let wheelRafId = null;
   DOM.viewport.addEventListener('wheel', (e) => {
     e.preventDefault();
     
-    const rect = DOM.viewport.getBoundingClientRect();
-    const cursorX = e.clientX - rect.left;
-    const cursorY = e.clientY - rect.top;
-    
-    // Scroll velocity delta
-    const delta = -e.deltaY;
-    let nextScale;
-    
-    if (delta > 0) {
-      nextScale = zoomState.scale * (1 + ZOOM_CONFIG.wheelFactor);
-    } else {
-      nextScale = zoomState.scale * (1 - ZOOM_CONFIG.wheelFactor);
+    if (wheelRafId) {
+      cancelAnimationFrame(wheelRafId);
     }
     
-    zoomTo(nextScale, cursorX, cursorY);
+    wheelRafId = requestAnimationFrame(() => {
+      const rect = DOM.viewport.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+      
+      // Scroll velocity delta
+      const delta = -e.deltaY;
+      let nextScale;
+      
+      if (delta > 0) {
+        nextScale = zoomState.scale * (1 + ZOOM_CONFIG.wheelFactor);
+      } else {
+        nextScale = zoomState.scale * (1 - ZOOM_CONFIG.wheelFactor);
+      }
+      
+      zoomTo(nextScale, cursorX, cursorY);
+    });
   }, { passive: false });
   
   // Double click resets to fit or zooms in
@@ -646,3 +734,4 @@ function toggleFullscreen() {
       });
   }
 }
+})();

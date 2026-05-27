@@ -32,8 +32,8 @@ html[data-theme="dark"] {
   --bg-tertiary: #172136;
   --border-color: rgba(255, 255, 255, 0.07);
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #a8b9cc;
+  --text-muted: #8899b0;
   
   --accent-color: #3b82f6;
   --accent-hover: #2563eb;
@@ -64,8 +64,8 @@ html[data-theme="light"] {
   --bg-tertiary: #f1f5f9;
   --border-color: rgba(15, 23, 42, 0.08);
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-secondary: #374151;
+  --text-muted: #64748b;
   
   --accent-color: #2563eb;
   --accent-hover: #1d4ed8;
@@ -78,10 +78,10 @@ html[data-theme="light"] {
   --card-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
   --card-hover-border: rgba(37, 99, 235, 0.3);
   
-  --badge-png: rgba(37, 99, 235, 0.1);
-  --badge-png-text: #1d4ed8;
-  --badge-pdf: rgba(220, 38, 38, 0.1);
-  --badge-pdf-text: #b91c1c;
+  --badge-png: rgba(37, 99, 235, 0.12);
+  --badge-png-text: #1e3a8a;
+  --badge-pdf: rgba(220, 38, 38, 0.12);
+  --badge-pdf-text: #7f1d1d;
   
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: #94a3b8;
@@ -576,6 +576,24 @@ html[data-theme="light"] .toggle-thumb .sun {
   100% { background-color: var(--bg-primary); }
 }
 
+/* Skeleton Loading Elements */
+.skeleton-text {
+  background-color: var(--bg-tertiary);
+  animation: skeleton-bg 2s infinite ease-in-out;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 80%;
+  margin-bottom: 8px;
+}
+
+.skeleton-meta {
+  height: 14px;
+  width: 40%;
+  margin-top: auto;
+}
 .card-thumbnail-img {
   position: absolute;
   top: 0;

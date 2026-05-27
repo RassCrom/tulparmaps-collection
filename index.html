@@ -4,18 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cartography Showcase - High-Resolution Maps</title>
+  <meta name="description" content="A high-fidelity cartography vault showcasing high-resolution maps. Explore and download premium PNG and PDF maps.">
   
   <!-- Favicon using logo.png -->
-  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
   
   <!-- Premium Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
   
-  <!-- Style Sheet -->
-  <link rel="stylesheet" href="/style.css">
-  
+  <!-- Critical inline CSS: prevents FOUC and unblocks first render -->
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html[data-theme="dark"]{--bg-primary:#070b13;--bg-secondary:#0f1624;--bg-tertiary:#172136;--text-primary:#f8fafc;--text-muted:#8899b0;--border-color:rgba(255,255,255,0.07);--accent-color:#3b82f6;--color-gradient:linear-gradient(135deg,#3b82f6,#8b5cf6)}
+    html[data-theme="light"]{--bg-primary:#f8fafc;--bg-secondary:#ffffff;--bg-tertiary:#f1f5f9;--text-primary:#0f172a;--text-muted:#64748b;--border-color:rgba(15,23,42,0.08);--accent-color:#2563eb;--color-gradient:linear-gradient(135deg,#2563eb,#7c3aed)}
+    body{background-color:var(--bg-primary);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+    .site-header{position:sticky;top:0;z-index:100;background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
+    .header-container{max-width:1280px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-logo{width:40px;height:40px;border-radius:8px}
+    .maps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:28px}
+    .map-card{border-radius:12px;overflow:hidden;background:var(--bg-secondary);border:1px solid var(--border-color)}
+    .card-thumbnail-wrapper{position:relative;width:100%;padding-top:65%;background-color:var(--bg-primary)}
+    @keyframes skeleton-bg{0%{background-color:var(--bg-primary)}50%{background-color:var(--bg-tertiary)}100%{background-color:var(--bg-primary)}}
+    .skeleton-card .card-thumbnail-wrapper,.skeleton-text{animation:skeleton-bg 2s infinite ease-in-out}
+    .skeleton-text{border-radius:8px;background-color:var(--bg-tertiary)}
+    .skeleton-title{height:20px;width:80%;margin-bottom:8px}
+    .skeleton-meta{height:14px;width:40%}
+    .card-body{padding:16px}
+  </style>
+
+  <!-- Full stylesheet loaded async (non-blocking) -->
+  <link rel="preload" as="style" href="style.min.css" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.min.css"></noscript>
+
+
 </head>
 <body>
 
@@ -23,7 +48,7 @@
   <header class="site-header">
     <div class="header-container">
       <div class="brand">
-        <img src="/logo.png" alt="TulparMaps Logo" class="brand-logo" id="header-logo">
+        <img src="logo.png" alt="TulparMaps Logo" class="brand-logo" id="header-logo" width="48" height="48">
         <div class="brand-text">
           <h1>TulparMaps</h1>
           <p class="subtitle">Alikhan Beisenbayev</p>
@@ -87,7 +112,35 @@
   <!-- Main Map Collection Grid -->
   <main class="gallery-container">
     <div id="maps-grid" class="maps-grid">
-      <!-- Generated Dynamically in app.js -->
+      <!-- Skeleton Loaders for initial fetch -->
+      <div class="map-card skeleton-card">
+        <div class="card-thumbnail-wrapper"></div>
+        <div class="card-body">
+          <div class="skeleton-text skeleton-title"></div>
+          <div class="skeleton-text skeleton-meta"></div>
+        </div>
+      </div>
+      <div class="map-card skeleton-card">
+        <div class="card-thumbnail-wrapper"></div>
+        <div class="card-body">
+          <div class="skeleton-text skeleton-title"></div>
+          <div class="skeleton-text skeleton-meta"></div>
+        </div>
+      </div>
+      <div class="map-card skeleton-card">
+        <div class="card-thumbnail-wrapper"></div>
+        <div class="card-body">
+          <div class="skeleton-text skeleton-title"></div>
+          <div class="skeleton-text skeleton-meta"></div>
+        </div>
+      </div>
+      <div class="map-card skeleton-card">
+        <div class="card-thumbnail-wrapper"></div>
+        <div class="card-body">
+          <div class="skeleton-text skeleton-title"></div>
+          <div class="skeleton-text skeleton-meta"></div>
+        </div>
+      </div>
     </div>
     
     <!-- Sentinel for Infinite Scroll -->
@@ -184,7 +237,7 @@
   <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-brand">
-        <img src="/logo.png" alt="TulparMaps Logo" class="footer-logo" id="footer-logo">
+        <img src="logo.png" alt="TulparMaps Logo" class="footer-logo" id="footer-logo" width="48" height="48">
         <span class="footer-brand-name">TulparMaps</span>
       </div>
       <div class="footer-divider"></div>
@@ -197,6 +250,6 @@
   </footer>
 
   <!-- App Main Code Script -->
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="app.min.js"></script>
 </body>
 </html>
