@@ -47,6 +47,15 @@ const state = {
   itemsPerPage: 10
 };
 
+// Format byte size to a human-readable string (computed client-side)
+function formatSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(2)} MB`;
+  const kb = bytes / 1024;
+  return `${kb.toFixed(0)} KB`;
+}
+
 // AbortController for bfcache compatibility
 let fetchController = null;
 
@@ -128,7 +137,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   fetchCatalog();
   setupEventListeners();
+  registerServiceWorker();
 });
+
+// Register Service Worker for offline caching
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(getAssetUrl('/sw.js'))
+      .catch(err => console.warn('SW registration failed:', err));
+  }
+}
 
 // Abort in-flight requests on page hide to allow bfcache restoration
 window.addEventListener('pagehide', () => {
@@ -222,7 +240,7 @@ function applyFilters() {
 function sortFilteredMaps() {
   switch (state.sortBy) {
     case 'newest':
-      filteredMaps.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+      filteredMaps.sort((a, b) => b.dateAdded - a.dateAdded);
       break;
     case 'name-asc':
       filteredMaps.sort((a, b) => a.title.localeCompare(b.title));
@@ -277,14 +295,12 @@ function renderGallery() {
     card.setAttribute('data-index', startIndex + index);
     card.mapData = map; // Store map data for event delegation
     
-    // Format badge (PNG, JPG, etc.)
-    const badgeText = map.type.toUpperCase();
     const resolvedThumbUrl = getAssetUrl(map.thumbnailUrl);
     const resolvedHighResUrl = getAssetUrl(map.url);
+    const sizeFormatted = formatSize(map.size);
     
     card.innerHTML = `
-      <div class="card-thumbnail-wrapper">
-        <span class="card-badge badge-png">${badgeText}</span>
+      <div class="card-thumbnail-wrapper loading">
         <img alt="${map.title}" class="card-thumbnail-img" ${startIndex + index < 4 ? 'fetchpriority="high"' : 'loading="lazy"'}>
       </div>
       <div class="card-body">
@@ -292,7 +308,7 @@ function renderGallery() {
         <div class="card-meta">
           <div class="card-size-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-            <span>${map.sizeFormatted}</span>
+            <span>${sizeFormatted}</span>
           </div>
           <button class="card-download-btn" data-url="${resolvedHighResUrl}" data-filename="${map.filename}" title="Download Original File">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -301,9 +317,11 @@ function renderGallery() {
       </div>
     `;
     
+    const wrapper = card.querySelector('.card-thumbnail-wrapper');
     const img = card.querySelector('.card-thumbnail-img');
     img.onload = () => {
       img.classList.add('loaded');
+      wrapper.classList.remove('loading');
     };
     img.src = resolvedThumbUrl;
     
@@ -333,7 +351,7 @@ function openViewer(map) {
   DOM.zoomTitle.textContent = map.title;
   DOM.zoomBadge.textContent = map.type.toUpperCase();
   DOM.zoomBadge.className = 'badge badge-png';
-  DOM.zoomSize.textContent = map.sizeFormatted;
+  DOM.zoomSize.textContent = formatSize(map.size);
   DOM.zoomDownloadBtn.href = resolvedUrl;
   DOM.zoomDownloadBtn.setAttribute('download', map.filename);
   
@@ -343,6 +361,7 @@ function openViewer(map) {
   
   DOM.zoomModal.style.display = 'flex';
   document.body.style.overflow = 'hidden'; // Lock background scrolling
+  DOM.container.style.willChange = 'transform'; // GPU promote only when viewer is active
   
   // Set initial transforms
   zoomState.scale = 1.0;
@@ -378,6 +397,7 @@ function loadHighResImage(url) {
 function closeViewer() {
   DOM.zoomModal.style.display = 'none';
   document.body.style.overflow = ''; // Unlock scrolling
+  DOM.container.style.willChange = ''; // Release GPU layer
   DOM.container.innerHTML = '';
   
   // Close fullscreen if active

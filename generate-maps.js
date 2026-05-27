@@ -52,13 +52,6 @@ function cleanTitle(filename) {
   return overrides[name] || name;
 }
 
-// Format byte size to a human-readable MB string
-function formatSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(2)} MB`;
-}
-
 async function generateMaps() {
   try {
     const files = fs.readdirSync(MAPS_DIR);
@@ -80,8 +73,8 @@ async function generateMaps() {
           if (!hasWebp) {
             console.log(`Generating compressed thumbnail for ${file}...`);
             await sharp(filePath)
-              .resize({ width: 500, withoutEnlargement: true })
-              .webp({ quality: 80 })
+              .resize({ width: 350, withoutEnlargement: true })
+              .webp({ quality: 65 })
               .toFile(webpPath);
             hasWebp = true;
           }
@@ -91,8 +84,7 @@ async function generateMaps() {
             title: cleanTitle(file),
             type: ext.substring(1), // 'png', 'jpg', etc.
             size: stat.size,
-            sizeFormatted: formatSize(stat.size),
-            dateAdded: stat.mtime.toISOString(),
+            dateAdded: Math.floor(stat.mtime.getTime() / 1000),
             url: `/maps/${encodeURIComponent(file)}`,
             // Use the WebP as the gallery thumbnail, fallback to original high-res if missing
             thumbnailUrl: hasWebp ? `/maps/webp/${encodeURIComponent(webpName)}` : `/maps/${encodeURIComponent(file)}`
