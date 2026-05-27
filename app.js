@@ -1,31 +1,52 @@
 /* ==========================================================================
-   DYNAMIC ENVIRONMENT PATH RESOLVER
+   APP BOOTSTRAP
    ========================================================================== */
 (() => {
-// We will dynamically determine the correct asset prefix when fetching the catalog.
-// This ensures compatibility with Vite dev server (./), VS Code Live Server (./public/), 
-// and GitHub Pages (./public/) regardless of repository name or URL structure.
-let activePrefix = null;
+const ROOT_ASSETS = new Set(['sw.js', 'logo.png', 'logo-dark.png']);
+let catalogAssetBase = './';
+
+function isExternalUrl(path) {
+  return /^(?:[a-z][a-z\d+.-]*:)?\/\//i.test(path) || path.startsWith('data:') || path.startsWith('blob:');
+}
+
+function normalizeAssetPath(path) {
+  if (!path) return '';
+  if (isExternalUrl(path)) return path;
+  return path.replace(/^\/+/, '');
+}
+
+function joinAssetUrl(base, path) {
+  const cleanPath = normalizeAssetPath(path);
+  if (!cleanPath || isExternalUrl(cleanPath)) return cleanPath;
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+  return `${normalizedBase}${cleanPath}`;
+}
+
+function getCatalogCandidates() {
+  const usesBundledEntry = !document.querySelector('script[src$="app.min.js"], script[src$="app.js"]');
+  const isViteDev = Boolean(document.querySelector('script[src^="/@vite/client"]'));
+  const sourceStaticCandidates = ['./public/maps.json', './maps.json'];
+  const builtCandidates = ['./maps.json', './public/maps.json'];
+  return [...new Set(usesBundledEntry || isViteDev ? builtCandidates : sourceStaticCandidates)];
+}
+
+function rememberCatalogLocation(catalogUrl) {
+  catalogAssetBase = catalogUrl.replace(/maps\.json(?:[?#].*)?$/, '');
+}
 
 function getAssetUrl(path) {
-  if (!path) return '';
-  
-  // Format clean leading-slash path
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-  
-  // Determine if it is a root-level asset (sw.js or logo files)
-  const isRootAsset = cleanPath === 'sw.js' || 
-                      cleanPath === 'logo.png' || 
-                      cleanPath === 'logo-dark.png';
-  
-  if (isRootAsset) {
-    // Root assets: served relative to index.html
-    return './' + cleanPath;
-  } else {
-    // Public assets: use the dynamically discovered prefix (defaults to ./public/)
-    const prefix = activePrefix !== null ? activePrefix : './public/';
-    return prefix + cleanPath;
-  }
+  const cleanPath = normalizeAssetPath(path);
+  if (!cleanPath || isExternalUrl(cleanPath)) return cleanPath;
+  return joinAssetUrl(ROOT_ASSETS.has(cleanPath) ? './' : catalogAssetBase, cleanPath);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 /* ==========================================================================
@@ -43,11 +64,28 @@ const state = {
 
 // Format byte size to a human-readable string (computed client-side)
 function formatSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const mb = bytes / (1024 * 1024);
+  const size = Number(bytes) || 0;
+  if (size === 0) return '0 Bytes';
+  const mb = size / (1024 * 1024);
   if (mb >= 1) return `${mb.toFixed(2)} MB`;
-  const kb = bytes / 1024;
+  const kb = size / 1024;
   return `${kb.toFixed(0)} KB`;
+}
+
+function getMapTitle(map) {
+  return String(map.title || map.filename || 'Untitled map');
+}
+
+function getMapFilename(map) {
+  return String(map.filename || '');
+}
+
+function getMapTimestamp(map) {
+  const numericValue = Number(map.dateAdded);
+  if (Number.isFinite(numericValue)) return numericValue;
+
+  const parsedDate = Date.parse(map.dateAdded);
+  return Number.isFinite(parsedDate) ? parsedDate : 0;
 }
 
 // AbortController for bfcache compatibility
@@ -189,24 +227,28 @@ async function fetchCatalog() {
   fetchController = new AbortController();
 
   try {
-    let response;
-    // Discover the correct path for maps.json. 
-    // Vite serves it at root (./), GitHub Pages / Live Server serve it at ./public/
-    const pathsToTry = ['./public/maps.json', './maps.json'];
-    
-    for (const p of pathsToTry) {
+    let response = null;
+    const attempts = [];
+    const pathsToTry = getCatalogCandidates();
+
+    for (const path of pathsToTry) {
       try {
-        response = await fetch(p, { signal: fetchController.signal });
+        response = await fetch(path, { signal: fetchController.signal, cache: 'no-cache' });
         if (response.ok) {
-          activePrefix = p.replace('maps.json', '');
+          rememberCatalogLocation(path);
           break;
         }
+        attempts.push(`${path} (${response.status})`);
       } catch (e) {
         if (e.name === 'AbortError') throw e;
+        attempts.push(`${path} (${e.message})`);
       }
     }
 
-    if (!response || !response.ok) throw new Error('Failed to load map catalog from any expected location');
+    if (!response || !response.ok) {
+      throw new Error(`Failed to load map catalog. Tried: ${attempts.join(', ')}`);
+    }
+
     mapsList = await response.json();
     
     // Fallback if empty JSON or file load error
@@ -232,7 +274,8 @@ function applyFilters() {
   // Search Query filter
   const query = state.searchQuery.toLowerCase().trim();
   filteredMaps = mapsList.filter(map => {
-    return map.title.toLowerCase().includes(query) || map.filename.toLowerCase().includes(query);
+    return getMapTitle(map).toLowerCase().includes(query) ||
+      getMapFilename(map).toLowerCase().includes(query);
   });
 
   // Sorting
@@ -250,19 +293,19 @@ function applyFilters() {
 function sortFilteredMaps() {
   switch (state.sortBy) {
     case 'newest':
-      filteredMaps.sort((a, b) => b.dateAdded - a.dateAdded);
+      filteredMaps.sort((a, b) => getMapTimestamp(b) - getMapTimestamp(a));
       break;
     case 'name-asc':
-      filteredMaps.sort((a, b) => a.title.localeCompare(b.title));
+      filteredMaps.sort((a, b) => getMapTitle(a).localeCompare(getMapTitle(b)));
       break;
     case 'name-desc':
-      filteredMaps.sort((a, b) => b.title.localeCompare(a.title));
+      filteredMaps.sort((a, b) => getMapTitle(b).localeCompare(getMapTitle(a)));
       break;
     case 'size-desc':
-      filteredMaps.sort((a, b) => b.size - a.size);
+      filteredMaps.sort((a, b) => (Number(b.size) || 0) - (Number(a.size) || 0));
       break;
     case 'size-asc':
-      filteredMaps.sort((a, b) => a.size - b.size);
+      filteredMaps.sort((a, b) => (Number(a.size) || 0) - (Number(b.size) || 0));
       break;
   }
 }
@@ -305,22 +348,27 @@ function renderGallery() {
     card.setAttribute('data-index', startIndex + index);
     card.mapData = map; // Store map data for event delegation
     
+    const title = getMapTitle(map);
+    const filename = getMapFilename(map);
     const resolvedThumbUrl = getAssetUrl(map.thumbnailUrl);
     const resolvedHighResUrl = getAssetUrl(map.url);
     const sizeFormatted = formatSize(map.size);
+    const safeTitle = escapeHtml(title);
+    const safeFilename = escapeHtml(filename);
+    const safeHighResUrl = escapeHtml(resolvedHighResUrl);
     
     card.innerHTML = `
       <div class="card-thumbnail-wrapper loading">
-        <img alt="${map.title}" class="card-thumbnail-img" ${startIndex + index < 4 ? 'fetchpriority="high"' : 'loading="lazy"'}>
+        <img alt="${safeTitle}" class="card-thumbnail-img" ${startIndex + index < 4 ? 'fetchpriority="high"' : 'loading="lazy"'}>
       </div>
       <div class="card-body">
-        <h2 class="card-title">${map.title}</h2>
+        <h2 class="card-title">${safeTitle}</h2>
         <div class="card-meta">
           <div class="card-size-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
             <span>${sizeFormatted}</span>
           </div>
-          <button class="card-download-btn" data-url="${resolvedHighResUrl}" data-filename="${map.filename}" title="Download Original File">
+          <button class="card-download-btn" data-url="${safeHighResUrl}" data-filename="${safeFilename}" title="Download Original File">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           </button>
         </div>
@@ -357,13 +405,15 @@ function openViewer(map) {
   zoomState.activeMap = map;
   
   const resolvedUrl = getAssetUrl(map.url);
+  const filename = getMapFilename(map);
+  const type = String(map.type || 'png');
   
-  DOM.zoomTitle.textContent = map.title;
-  DOM.zoomBadge.textContent = map.type.toUpperCase();
+  DOM.zoomTitle.textContent = getMapTitle(map);
+  DOM.zoomBadge.textContent = type.toUpperCase();
   DOM.zoomBadge.className = 'badge badge-png';
   DOM.zoomSize.textContent = formatSize(map.size);
   DOM.zoomDownloadBtn.href = resolvedUrl;
-  DOM.zoomDownloadBtn.setAttribute('download', map.filename);
+  DOM.zoomDownloadBtn.setAttribute('download', filename);
   
   DOM.zoomSpinner.style.display = 'flex';
   DOM.zoomLoadingText.textContent = 'Preparing viewport...';
@@ -380,7 +430,7 @@ function openViewer(map) {
   updateTransform();
 
   // Set the URL hash to support unique deep-linked map subpages!
-  window.location.hash = `map=${encodeURIComponent(map.filename)}`;
+  window.location.hash = `map=${encodeURIComponent(filename)}`;
 
   loadHighResImage(resolvedUrl);
 }
@@ -430,7 +480,7 @@ function handleInitialHashRoute() {
   const hash = window.location.hash;
   if (hash && hash.startsWith('#map=')) {
     const filename = decodeURIComponent(hash.substring(5));
-    const map = mapsList.find(m => m.filename === filename);
+    const map = mapsList.find(m => getMapFilename(m) === filename);
     if (map) {
       // Delay slightly to allow catalog layout calculations
       setTimeout(() => {
@@ -528,8 +578,8 @@ function setupEventListeners() {
     const hash = window.location.hash;
     if (hash && hash.startsWith('#map=')) {
       const filename = decodeURIComponent(hash.substring(5));
-      const map = mapsList.find(m => m.filename === filename);
-      if (map && (!zoomState.activeMap || zoomState.activeMap.filename !== filename)) {
+      const map = mapsList.find(m => getMapFilename(m) === filename);
+      if (map && (!zoomState.activeMap || getMapFilename(zoomState.activeMap) !== filename)) {
         openViewer(map);
       }
     } else {

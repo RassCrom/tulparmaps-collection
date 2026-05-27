@@ -52,6 +52,10 @@ function cleanTitle(filename) {
   return overrides[name] || name;
 }
 
+function mapAssetPath(...parts) {
+  return ['maps', ...parts].map(encodeURIComponent).join('/');
+}
+
 async function generateMaps() {
   try {
     const files = fs.readdirSync(MAPS_DIR);
@@ -85,16 +89,16 @@ async function generateMaps() {
             type: ext.substring(1), // 'png', 'jpg', etc.
             size: stat.size,
             dateAdded: Math.floor(stat.mtime.getTime() / 1000),
-            url: `/maps/${encodeURIComponent(file)}`,
+            url: mapAssetPath(file),
             // Use the WebP as the gallery thumbnail, fallback to original high-res if missing
-            thumbnailUrl: hasWebp ? `/maps/webp/${encodeURIComponent(webpName)}` : `/maps/${encodeURIComponent(file)}`
+            thumbnailUrl: hasWebp ? mapAssetPath('webp', webpName) : mapAssetPath(file)
           });
         }
       }
     }
 
     // Sort by date added (newest first) by default
-    maps.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+    maps.sort((a, b) => b.dateAdded - a.dateAdded);
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(maps, null, 2), 'utf8');
     console.log(`Successfully compiled map catalog! Saved ${maps.length} maps to ${OUTPUT_FILE}`);
