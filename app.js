@@ -15,23 +15,26 @@ if (pathSegments.length > 2 || (pathSegments.length === 2 && pathSegments[1] !==
 }
 
 const isLiveServer = window.location.port === '5500';
-const BASE_PATH = isLiveServer ? '/public' : basePath;
 
 function getAssetUrl(path) {
   if (!path) return '';
   
-  // Handle paths that already start with public
-  if (path.startsWith('/public') || path.startsWith('public')) {
-    // Under Vite or Public Host (where public/ folder mounts at root), strip the prefix
-    if (!isLiveServer) {
-      return path.replace(/^\/?public/, '');
-    }
-    return path.startsWith('/') ? path : '/' + path;
-  }
-  
-  // Format leading slash and prepend base path for Live Server compatibility
+  // Format clean leading-slash path
   const cleanPath = path.startsWith('/') ? path : '/' + path;
-  return BASE_PATH + cleanPath;
+  
+  // Determine if it is a root-level asset (sw.js or logo files)
+  const isRootAsset = cleanPath === '/sw.js' || 
+                      cleanPath === '/logo.png' || 
+                      cleanPath === '/logo-dark.png';
+  
+  if (isRootAsset) {
+    // Root assets: served from root of workspace / repository
+    return basePath + cleanPath;
+  } else {
+    // Public assets: served from public/ subdirectory
+    const prefix = isLiveServer ? '/public' : basePath + '/public';
+    return prefix + cleanPath;
+  }
 }
 
 /* ==========================================================================
