@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartography Showcase - High-Resolution Maps</title>
+  
+  <!-- Favicon using logo.png -->
+  <link rel="icon" type="image/png" href="/logo.png">
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Style Sheet -->
+  <link rel="stylesheet" href="/style.css">
+  
+</head>
+<body>
+
+  <!-- Premium Header & Branding -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="brand">
+        <img src="/logo.png" alt="TulparMaps Logo" class="brand-logo" id="header-logo">
+        <div class="brand-text">
+          <h1>TulparMaps</h1>
+          <p class="subtitle">Alikhan Beisenbayev</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Dark/Light Theme Toggle -->
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle visual theme">
+          <div class="toggle-track">
+            <span class="toggle-thumb">
+              <svg class="sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              <svg class="moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Interactive Controls Bar -->
+  <section class="controls-section">
+    <div class="controls-container">
+      
+      <!-- Search Input -->
+      <div class="search-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="search-input" placeholder="Search map title or keyword..." aria-label="Search maps">
+        <button id="clear-search" class="clear-search-btn" aria-label="Clear search" style="display: none;">&times;</button>
+      </div>
+      
+      <div class="filters-and-sorting">
+
+        
+        <!-- Sorting dropdown -->
+        <div class="sort-wrapper">
+          <label for="sort-select" class="sort-label">Sort by:</label>
+          <div class="select-container">
+            <select id="sort-select" aria-label="Sort maps by">
+              <option value="newest">Date Added (Newest)</option>
+              <option value="name-asc">Alphabetical (A-Z)</option>
+              <option value="name-desc">Alphabetical (Z-A)</option>
+              <option value="size-desc">File Size (Largest)</option>
+              <option value="size-asc">File Size (Smallest)</option>
+            </select>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="select-arrow"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+
+  <!-- Showcase Statistics and Info Banner -->
+  <div class="info-banner-container">
+    <div class="info-stats" id="catalog-stats">
+      Loading maps catalog...
+    </div>
+  </div>
+
+  <!-- Main Map Collection Grid -->
+  <main class="gallery-container">
+    <div id="maps-grid" class="maps-grid">
+      <!-- Generated Dynamically in app.js -->
+    </div>
+    
+    <!-- Sentinel for Infinite Scroll -->
+    <div id="scroll-sentinel" class="scroll-sentinel"></div>
+    
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <div class="empty-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      </div>
+      <h2>No Maps Found</h2>
+      <p>We couldn't find any maps matching your current filters or search query.</p>
+      <button class="btn btn-primary" id="reset-filters-btn">Reset All Filters</button>
+    </div>
+  </main>
+
+
+
+  <!-- Fully Immersive Fullscreen Zoom Modal Viewer -->
+  <div id="zoom-modal" class="zoom-modal-overlay" style="display: none;">
+    
+    <!-- Floating Header Stats/Details -->
+    <div class="zoom-header">
+      <div class="zoom-title-block">
+        <h2 id="zoom-map-title">Map Title</h2>
+        <div class="zoom-meta">
+          <span class="badge" id="zoom-map-badge">Format</span>
+          <span class="zoom-size" id="zoom-map-size">Size</span>
+        </div>
+      </div>
+      
+      <!-- Close Button (A large target to make exiting easy) -->
+      <button class="close-zoom-btn" id="close-zoom-btn" title="Close Viewer (Esc)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Active Loading Spinner -->
+    <div id="zoom-spinner" class="zoom-spinner-container">
+      <div class="spinner"></div>
+      <p id="zoom-loading-text">Rendering map details...</p>
+    </div>
+
+    <!-- The Infinite Pan-Zoom Viewport -->
+    <div class="viewer-viewport" id="viewer-viewport">
+      <div class="viewer-container" id="viewer-container">
+        <!-- Injected dynamically: either <img id="zoom-image"> or <canvas id="zoom-canvas"> -->
+      </div>
+    </div>
+
+    <!-- Dynamic Overlay Tooltip Guide -->
+    <div class="zoom-interaction-guide">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 12 12 8 12"></polyline><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      <span>Scroll to Zoom under cursor • Drag to Pan • Double Click to Reset</span>
+    </div>
+
+    <!-- Floating UI Controls Panel (Glassmorphic Widget) -->
+    <div class="zoom-controls-panel">
+      <!-- Zoom Out -->
+      <button class="control-btn" id="zoom-out-btn" title="Zoom Out (Scroll Down)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      
+      <!-- Current Zoom Indicator (Non-clickable, showing scale %) -->
+      <div class="zoom-indicator" id="zoom-percentage-text">100%</div>
+      
+      <!-- Zoom In -->
+      <button class="control-btn" id="zoom-in-btn" title="Zoom In (Scroll Up)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      
+      <div class="divider"></div>
+      
+      <!-- Reset Zoom to fit screen -->
+      <button class="control-btn" id="zoom-reset-btn" title="Fit to Viewport">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+      </button>
+      
+      <!-- Fullscreen Toggle -->
+      <button class="control-btn" id="zoom-fullscreen-btn" title="Toggle Fullscreen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fs-open"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+      
+      <div class="divider"></div>
+
+      <!-- Download Original File -->
+      <a class="control-btn download-btn-link" id="zoom-download-btn" href="#" download title="Download Original File">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      </a>
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <img src="/logo.png" alt="TulparMaps Logo" class="footer-logo" id="footer-logo">
+        <span class="footer-brand-name">TulparMaps</span>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-info">
+        <span class="copyright">&copy; 2026 Karasu</span>
+        <span class="bullet">&bull;</span>
+        <a href="mailto:karasu@tulparmaps.com" class="footer-email">karasu@tulparmaps.com</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Main Code Script -->
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
