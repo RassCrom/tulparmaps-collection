@@ -2,37 +2,28 @@
    DYNAMIC ENVIRONMENT PATH RESOLVER
    ========================================================================== */
 (() => {
-// Determine base path dynamically for different environments (Live Server, GitHub Pages, Vite)
-let basePath = '';
-const pathSegments = window.location.pathname.split('/');
-
-// Detect if running inside a subfolder (e.g. GitHub Pages repo like /map-collection/ or VS Code Live Server /public/)
-if (pathSegments.length > 2 || (pathSegments.length === 2 && pathSegments[1] !== '' && !pathSegments[1].endsWith('.html') && !pathSegments[1].endsWith('.js'))) {
-  const firstFolder = pathSegments[1];
-  if (firstFolder && firstFolder !== 'index.html' && firstFolder !== 'dist') {
-    basePath = '/' + firstFolder;
-  }
-}
-
-const isLiveServer = window.location.port === '5500';
+// We will dynamically determine the correct asset prefix when fetching the catalog.
+// This ensures compatibility with Vite dev server (./), VS Code Live Server (./public/), 
+// and GitHub Pages (./public/) regardless of repository name or URL structure.
+let activePrefix = null;
 
 function getAssetUrl(path) {
   if (!path) return '';
   
   // Format clean leading-slash path
-  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
   
   // Determine if it is a root-level asset (sw.js or logo files)
-  const isRootAsset = cleanPath === '/sw.js' || 
-                      cleanPath === '/logo.png' || 
-                      cleanPath === '/logo-dark.png';
+  const isRootAsset = cleanPath === 'sw.js' || 
+                      cleanPath === 'logo.png' || 
+                      cleanPath === 'logo-dark.png';
   
   if (isRootAsset) {
-    // Root assets: served from root of workspace / repository
-    return basePath + cleanPath;
+    // Root assets: served relative to index.html
+    return './' + cleanPath;
   } else {
-    // Public assets: served from public/ subdirectory
-    const prefix = isLiveServer ? '/public' : basePath + '/public';
+    // Public assets: use the dynamically discovered prefix (defaults to ./public/)
+    const prefix = activePrefix !== null ? activePrefix : './public/';
     return prefix + cleanPath;
   }
 }
@@ -198,8 +189,24 @@ async function fetchCatalog() {
   fetchController = new AbortController();
 
   try {
-    const response = await fetch(getAssetUrl('/maps.json'), { signal: fetchController.signal });
-    if (!response.ok) throw new Error('Failed to load map catalog');
+    let response;
+    // Discover the correct path for maps.json. 
+    // Vite serves it at root (./), GitHub Pages / Live Server serve it at ./public/
+    const pathsToTry = ['./public/maps.json', './maps.json'];
+    
+    for (const p of pathsToTry) {
+      try {
+        response = await fetch(p, { signal: fetchController.signal });
+        if (response.ok) {
+          activePrefix = p.replace('maps.json', '');
+          break;
+        }
+      } catch (e) {
+        if (e.name === 'AbortError') throw e;
+      }
+    }
+
+    if (!response || !response.ok) throw new Error('Failed to load map catalog from any expected location');
     mapsList = await response.json();
     
     // Fallback if empty JSON or file load error
