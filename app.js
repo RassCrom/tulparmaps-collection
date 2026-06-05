@@ -23,7 +23,13 @@ function joinAssetUrl(base, path) {
 }
 
 function getCatalogCandidates() {
-  const usesBundledEntry = !document.querySelector('script[src$="app.min.js"], script[src$="app.js"]');
+  const usesSourceEntry = Array.from(document.scripts).some(script => {
+    const src = script.getAttribute('src');
+    if (!src) return false;
+    const pathname = src.split(/[?#]/, 1)[0];
+    return pathname.endsWith('app.min.js') || pathname.endsWith('app.js');
+  });
+  const usesBundledEntry = !usesSourceEntry;
   const isViteDev = Boolean(document.querySelector('script[src^="/@vite/client"]'));
   const sourceStaticCandidates = ['./public/maps.json', './maps.json'];
   const builtCandidates = ['./maps.json', './public/maps.json'];
@@ -176,7 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Register Service Worker for offline caching
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(getAssetUrl('/sw.js'))
+    navigator.serviceWorker.register(getAssetUrl('/sw.js'), { updateViaCache: 'none' })
+      .then(registration => registration.update())
       .catch(err => console.warn('SW registration failed:', err));
   }
 }

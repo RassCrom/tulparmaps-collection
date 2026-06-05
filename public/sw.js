@@ -1,7 +1,7 @@
 /* ==========================================================================
    TulparMaps Service Worker - Offline Caching Strategy
    ========================================================================== */
-const CACHE_VERSION = 'tulparmaps-v2';
+const CACHE_VERSION = 'tulparmaps-v3';
 
 // Install: activate this worker immediately. Runtime caching below avoids
 // hard-coded asset names that differ between source and Vite builds.
@@ -28,16 +28,20 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin GET requests.
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // Strategy 1: stale-while-revalidate for maps.json.
+  // Strategy 1: network-first for app shell data and bundles so deployments
+  // do not pair new HTML with stale CSS/JS from a previous service worker.
   if (url.pathname.endsWith('/maps.json')) {
-    event.respondWith(staleWhileRevalidate(event.request));
+    event.respondWith(networkFirst(event.request));
     return;
   }
 
-  // Strategy 2: cache-first for thumbnails, CSS, JS, and logos.
+  if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  // Strategy 2: cache-first for thumbnails and logos.
   if (url.pathname.includes('/maps/webp/') ||
-      url.pathname.endsWith('.css') ||
-      url.pathname.endsWith('.js') ||
       (url.pathname.endsWith('.png') && url.pathname.includes('logo'))) {
     event.respondWith(cacheFirst(event.request));
     return;
