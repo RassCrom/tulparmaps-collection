@@ -109,9 +109,25 @@
   </section>
 
   <!-- Showcase Statistics and Info Banner -->
-  <div class="info-banner-container">
+  <div class="info-banner-container" id="maps-info-banner">
     <div class="info-stats" id="catalog-stats">
       Loading maps catalog...
+    </div>
+  </div>
+
+  <!-- Section Navigation Tabs -->
+  <div class="section-nav-container">
+    <div class="section-nav">
+      <button class="section-nav-btn active" data-section="maps">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+        Maps
+        <span class="section-nav-count" id="maps-nav-count">—</span>
+      </button>
+      <button class="section-nav-btn" data-section="projects">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        Web Projects
+        <span class="section-nav-count" id="projects-nav-count">0</span>
+      </button>
     </div>
   </div>
 
@@ -238,6 +254,54 @@
       </a>
     </div>
 
+  </div>
+
+  <!-- Web Projects Section -->
+  <section id="projects-section" class="projects-section" style="display: none;">
+    <div class="projects-grid" id="projects-grid"></div>
+  </section>
+
+  <!-- Project Detail Modal -->
+  <div id="project-modal" class="project-modal-overlay" style="display: none;">
+    <div class="project-modal-dialog">
+      <button class="project-modal-close" id="project-modal-close" title="Close (Esc)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="project-modal-preview">
+        <div id="project-modal-preview-placeholder" class="project-modal-preview-placeholder"></div>
+        <a id="project-modal-live-badge" href="#" target="_blank" rel="noopener noreferrer" class="project-live-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          View Live
+        </a>
+      </div>
+      <div class="project-modal-info">
+        <div class="project-modal-meta">
+          <span id="project-modal-meta-badge" class="project-category-badge"></span>
+          <span id="project-modal-year" class="project-modal-year"></span>
+        </div>
+        <h2 id="project-modal-title" class="project-modal-title"></h2>
+        <div class="project-detail-section">
+          <h3>Description</h3>
+          <p id="project-modal-desc"></p>
+        </div>
+        <div class="project-detail-section">
+          <h3>Inspiration</h3>
+          <p id="project-modal-inspiration"></p>
+        </div>
+        <div class="project-detail-section">
+          <h3>Idea</h3>
+          <p id="project-modal-idea"></p>
+        </div>
+        <div class="project-detail-section">
+          <h3>Tech Stack</h3>
+          <div id="project-modal-stack" class="stack-tags"></div>
+        </div>
+        <a id="project-modal-link" href="#" target="_blank" rel="noopener noreferrer" class="project-live-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          Open Live Project
+        </a>
+      </div>
+    </div>
   </div>
 
   <footer class="site-footer">

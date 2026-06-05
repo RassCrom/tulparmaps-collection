@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchCatalog();
   setupEventListeners();
   registerServiceWorker();
+  initProjects();
 });
 
 // Register Service Worker for offline caching
@@ -315,12 +316,15 @@ function updateStats() {
     DOM.catalogStats.textContent = 'No maps in showcase. Move files to /public/maps and run build-maps.';
     return;
   }
-  
+
   if (filteredMaps.length === mapsList.length) {
     DOM.catalogStats.textContent = `Showing all ${mapsList.length} maps`;
   } else {
     DOM.catalogStats.textContent = `Showing ${filteredMaps.length} of ${mapsList.length} matching maps`;
   }
+
+  const mapsNavCount = document.getElementById('maps-nav-count');
+  if (mapsNavCount) mapsNavCount.textContent = mapsList.length;
 }
 
 /* ==========================================================================
@@ -813,5 +817,295 @@ function toggleFullscreen() {
         DOM.zoomFullscreenBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fs-open"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
       });
   }
+}
+
+/* ==========================================================================
+   WEB PROJECTS
+   ========================================================================== */
+const WEB_PROJECTS = [
+  {
+    id: 'figura',
+    title: 'Figura',
+    category: 'Web Map',
+    badgeClass: 'badge-webmap',
+    year: '2024',
+    url: 'https://figura-eight.vercel.app/',
+    description: 'An interactive web cartography piece presenting spatial data through a carefully designed visual language. Clean vector rendering meets curated geographic layers.',
+    inspiration: 'The challenge of building maps that feel like designed objects — where every visual decision serves both aesthetics and information clarity.',
+    idea: 'Explore how a minimal map interface can carry rich spatial meaning without visual clutter, letting the geography speak for itself.',
+    stack: ['Mapbox GL JS', 'JavaScript', 'Vercel']
+  },
+  {
+    id: 'astana-buildings',
+    title: 'Astana Buildings',
+    category: 'Urban Map',
+    badgeClass: 'badge-urbanmap',
+    year: '2024',
+    url: 'https://kbh-nu.vercel.app/',
+    description: 'A 3D web map visualizing the building stock of Astana, Kazakhstan — exploring the city\'s rapid urban growth and architectural variety through extruded building footprints.',
+    inspiration: 'Astana\'s transformation from a steppe outpost into a bold capital in just three decades, with its eclectic mix of Soviet-era blocks and futuristic showpieces.',
+    idea: 'Render Astana\'s built environment in three dimensions to reveal patterns of density, height, and construction era across the city\'s districts.',
+    stack: ['Mapbox GL JS', 'Deck.gl', 'GeoJSON', 'Vercel']
+  },
+  {
+    id: 'tabiat-gis',
+    title: 'Tabiat Küzeti',
+    category: 'Web GIS',
+    badgeClass: 'badge-webgis',
+    year: '2024',
+    url: 'https://tabiatgis.netlify.app/',
+    description: 'A web GIS platform for nature observation and environmental monitoring. "Tabiat Küzeti" (Nature Watch) brings spatial ecological data to researchers, conservationists, and the public in an accessible web interface.',
+    inspiration: 'The absence of open, interactive environmental mapping tools for Central Asian nature areas — and the need to bridge field ecology with modern geospatial technology.',
+    idea: 'Build an open GIS platform that democratizes access to environmental data, empowering local communities and researchers with spatial intelligence about their natural surroundings.',
+    stack: ['Leaflet', 'GeoJSON', 'PostGIS', 'Python', 'Netlify']
+  },
+  {
+    id: 'tigranes-great',
+    title: 'Tigranes the Great',
+    category: 'Storytelling',
+    badgeClass: 'badge-story',
+    year: '2023',
+    url: 'https://tigranes-great.netlify.app/',
+    description: 'An immersive scrollytelling map chronicling the rise of the Armenian Empire under Tigranes II — at its peak stretching from the Caspian to the Mediterranean, making it one of antiquity\'s largest empires.',
+    inspiration: 'The remarkable scale of Tigranes\'s empire and how little it appears in Western historical narratives, despite being a major power of the 1st century BC.',
+    idea: 'Use scroll-driven cartographic storytelling to walk the viewer through the empire\'s territorial expansion, key campaigns, and eventual decline — making ancient geopolitics legible and visceral.',
+    stack: ['Mapbox GL JS', 'Scrollama', 'JavaScript', 'Netlify']
+  },
+  {
+    id: 'armenia-energy',
+    title: 'Armenia Energy Profile',
+    category: 'Data Viz',
+    badgeClass: 'badge-dataviz',
+    year: '2023',
+    url: 'https://rasscrom.github.io/armenia-energy/',
+    description: 'A data visualization of Armenia\'s energy sector — mapping electricity generation (7.7 TWh in 2021), infrastructure, and the country\'s transition toward renewables across thermal, hydro, nuclear, and solar sources.',
+    inspiration: 'Armenia\'s unique energy mix anchored by the aging Metsamor Nuclear Plant alongside rapidly growing solar capacity — a country at a genuine energy crossroads.',
+    idea: 'Present Armenia\'s energy landscape through interactive charts and geographic mapping, making complex energy statistics accessible and helping tell the story of the country\'s renewable transition.',
+    stack: ['D3.js', 'Mapbox GL JS', 'JavaScript', 'GitHub Pages']
+  },
+  {
+    id: 'tabiat-report',
+    title: 'Tabiat Küzeti — Report',
+    category: 'Data Report',
+    badgeClass: 'badge-report',
+    year: '2024',
+    url: 'https://tabiatgis.netlify.app/report',
+    description: 'The analytical reporting interface of the Tabiat Küzeti platform — an interactive data report presenting environmental indicators, land cover analysis, and ecological findings derived from spatial field data.',
+    inspiration: 'The gap between raw GIS data collected in the field and clear, visual communication of findings to decision-makers and the public.',
+    idea: 'Present research findings as an interactive web report that combines scientific data with readable visual storytelling — making ecology accessible beyond the specialist community.',
+    stack: ['D3.js', 'Chart.js', 'Leaflet', 'Netlify']
+  },
+  {
+    id: 'historical-vienna',
+    title: 'Historical Vienna',
+    category: 'Web Map',
+    badgeClass: 'badge-webmap',
+    year: '2023',
+    url: 'https://rasscrom.github.io/historical-vienna/#14/48.2082/16.3638',
+    description: 'An interactive web map of historical Vienna, overlaying archival cartography with modern geography to reveal how the imperial city\'s fabric — fortifications, the Ringstrasse, Habsburg districts — relates to the city today.',
+    inspiration: 'Vienna\'s 19th-century transformation under Franz Joseph I remains one of urban history\'s most dramatic reshaping events, and old maps tell that story better than any text.',
+    idea: 'Build a map viewer that lets users explore Vienna across time, comparing historical surveys with contemporary layers through an immersive, navigable web interface.',
+    stack: ['Mapbox GL JS', 'Historical Tiles', 'GeoJSON', 'GitHub Pages']
+  },
+  {
+    id: 'austria-income',
+    title: 'Austrian Income by Districts',
+    category: 'Data Viz',
+    badgeClass: 'badge-dataviz',
+    year: '2023',
+    url: 'https://rasscrom.github.io/austria-income-pct25/income',
+    description: 'A spatial visualization of income distribution across Austrian districts — mapping 2023 median income data disaggregated by gender, exposing regional disparities that aggregate national statistics obscure.',
+    inspiration: 'The spatial dimension of economic inequality: that wealth and poverty are as much geographic phenomena as social ones, and that maps reveal patterns tables cannot.',
+    idea: 'Map district-level income statistics to expose the west–east divide in Austrian earnings and highlight the persistent gender pay gap across all regions.',
+    stack: ['Mapbox GL JS', 'D3.js', 'JavaScript', 'GitHub Pages']
+  },
+  {
+    id: 'notable-kazakhs',
+    title: 'Notable Kazakhs',
+    category: 'Web Map',
+    badgeClass: 'badge-webmap',
+    year: '2023',
+    url: 'https://rasscrom.github.io/notable-kazakhs/#4/48.39/67.62',
+    description: 'An interactive map pinpointing the birthplaces and origins of notable Kazakhs throughout history — poets, scientists, politicians, and cultural figures — scattered across the vast Eurasian steppe.',
+    inspiration: 'Kazakhstan\'s cultural heritage is rich with remarkable figures whose stories are spread across a territory as large as Western Europe, yet rarely mapped or collected in one place.',
+    idea: 'Create a living geographic atlas of Kazakh national identity: collect biographical data for notable Kazakhs and map it, turning history into a spatial story of who came from where.',
+    stack: ['Mapbox GL JS', 'GeoJSON', 'JavaScript', 'GitHub Pages']
+  },
+  {
+    id: 'alash-orda',
+    title: 'Alash Orda',
+    category: 'Storytelling',
+    badgeClass: 'badge-story',
+    year: '2023',
+    url: 'https://rasscrom.github.io/alash-orda/',
+    description: 'A scroll-driven story map about the Alash Orda — the Kazakh nationalist movement and short-lived autonomous government (1917–1920) that arose amid the Russian Revolution and fought to preserve Kazakh statehood before being crushed by the Soviets.',
+    inspiration: 'Alash Orda is one of the most significant chapters in modern Kazakh history, yet remains largely unknown. Its leaders were intellectuals who envisioned a modern, democratic Kazakh state — and paid with their lives.',
+    idea: 'Use cartographic storytelling to bring this pivotal era to life: showing territorial claims, key events, and the political geography of the movement through animated maps and biographical portraits of its founders.',
+    stack: ['Mapbox GL JS', 'Scrollama', 'JavaScript', 'GitHub Pages']
+  }
+];
+
+function getCategoryBadgeClass(badgeClass) {
+  return badgeClass || 'badge-webmap';
+}
+
+function getProjectInitials(title) {
+  return String(title || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(word => word.charAt(0).toUpperCase())
+    .join('') || 'WP';
+}
+
+function getProjectPreviewMarkup(project, options = {}) {
+  const safeTitle = escapeHtml(project.title);
+  const safeCategory = escapeHtml(project.category);
+  const safeInitials = escapeHtml(getProjectInitials(project.title));
+  const badgeClass = getCategoryBadgeClass(project.badgeClass);
+  const sizeClass = options.large ? ' project-preview-placeholder-large' : '';
+
+  return `
+    <div class="project-preview-placeholder ${badgeClass}${sizeClass}" aria-label="${safeTitle} preview placeholder" role="img">
+      <div class="project-preview-grid" aria-hidden="true"></div>
+      <div class="project-preview-mark">${safeInitials}</div>
+      <div class="project-preview-lines" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="project-preview-footer">
+        <span>${safeCategory}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderProjects() {
+  const grid = document.getElementById('projects-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  WEB_PROJECTS.forEach(project => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.dataset.id = project.id;
+
+    const safeTitle = escapeHtml(project.title);
+    const safeDesc = escapeHtml(project.description);
+    const safeCategory = escapeHtml(project.category);
+    const badgeClass = getCategoryBadgeClass(project.badgeClass);
+
+    card.innerHTML = `
+      <div class="project-thumbnail-wrapper">
+        ${getProjectPreviewMarkup(project)}
+        <span class="project-category-badge ${badgeClass}">${safeCategory}</span>
+      </div>
+      <div class="project-card-body">
+        <h2 class="project-card-title">${safeTitle}</h2>
+        <p class="project-card-desc">${safeDesc}</p>
+        <div class="project-card-footer">
+          <span class="project-card-category-label">${safeCategory}</span>
+          <span class="project-card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
+          </span>
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => openProjectModal(project));
+    fragment.appendChild(card);
+  });
+
+  grid.appendChild(fragment);
+}
+
+function openProjectModal(project) {
+  const modal = document.getElementById('project-modal');
+  if (!modal) return;
+
+  const preview = document.getElementById('project-modal-preview-placeholder');
+  const liveBadge = document.getElementById('project-modal-live-badge');
+  const liveLink = document.getElementById('project-modal-link');
+  if (!preview || !liveBadge || !liveLink) return;
+
+  preview.innerHTML = getProjectPreviewMarkup(project, { large: true });
+  liveBadge.href = project.url;
+  document.getElementById('project-modal-title').textContent = project.title;
+  document.getElementById('project-modal-desc').textContent = project.description;
+  document.getElementById('project-modal-inspiration').textContent = project.inspiration;
+  document.getElementById('project-modal-idea').textContent = project.idea;
+  document.getElementById('project-modal-year').textContent = project.year;
+  liveLink.href = project.url;
+
+  const metaBadge = document.getElementById('project-modal-meta-badge');
+  metaBadge.textContent = project.category;
+  metaBadge.className = `project-category-badge ${getCategoryBadgeClass(project.badgeClass)}`;
+
+  const stackContainer = document.getElementById('project-modal-stack');
+  stackContainer.innerHTML = project.stack
+    .map(tech => `<span class="stack-tag">${escapeHtml(tech)}</span>`)
+    .join('');
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeProjectModal() {
+  const modal = document.getElementById('project-modal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function initProjects() {
+  renderProjects();
+
+  const projectsNavCount = document.getElementById('projects-nav-count');
+  if (projectsNavCount) projectsNavCount.textContent = WEB_PROJECTS.length;
+
+  const closeProjectBtn = document.getElementById('project-modal-close');
+  if (closeProjectBtn) closeProjectBtn.addEventListener('click', closeProjectModal);
+
+  const projectModal = document.getElementById('project-modal');
+  if (projectModal) {
+    projectModal.addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeProjectModal();
+    });
+  }
+
+  document.querySelectorAll('.section-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.section-nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const section = btn.dataset.section;
+      const mapsGallery = document.querySelector('.gallery-container');
+      const projectsSection = document.getElementById('projects-section');
+      const controlsSection = document.querySelector('.controls-section');
+      const infoBanner = document.getElementById('maps-info-banner');
+
+      if (section === 'maps') {
+        mapsGallery.style.display = '';
+        projectsSection.style.display = 'none';
+        if (controlsSection) controlsSection.style.display = '';
+        if (infoBanner) infoBanner.style.display = '';
+      } else {
+        mapsGallery.style.display = 'none';
+        projectsSection.style.display = '';
+        if (controlsSection) controlsSection.style.display = 'none';
+        if (infoBanner) infoBanner.style.display = 'none';
+      }
+    });
+  });
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('project-modal');
+      if (modal && modal.style.display === 'flex') closeProjectModal();
+    }
+  });
 }
 })();
