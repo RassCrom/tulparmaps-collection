@@ -333,6 +333,7 @@ html[data-theme="light"] .toggle-thumb .sun {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 136px;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
 }
@@ -342,6 +343,7 @@ html[data-theme="light"] .toggle-thumb .sun {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    min-height: 80px;
   }
 }
 
@@ -370,7 +372,8 @@ html[data-theme="light"] .toggle-thumb .sun {
 }
 
 #search-input,
-#project-search-input {
+#project-search-input,
+#all-works-search-input {
   width: 100%;
   padding: 12px 16px 12px 42px;
   border-radius: var(--radius-md);
@@ -384,7 +387,8 @@ html[data-theme="light"] .toggle-thumb .sun {
 }
 
 #search-input:focus,
-#project-search-input:focus {
+#project-search-input:focus,
+#all-works-search-input:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
@@ -524,9 +528,11 @@ html[data-theme="light"] .toggle-thumb .sun {
   min-height: 50vh;
 }
 
-.maps-grid {
+.maps-grid,
+.projects-grid,
+.all-works-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 28px;
 }
 
@@ -1088,7 +1094,14 @@ html[data-theme="light"] .toggle-thumb .sun {
   border-radius: var(--radius-full);
   padding: 4px;
   width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
   box-shadow: var(--shadow-sm);
+}
+
+.section-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .section-nav-btn {
@@ -1106,6 +1119,11 @@ html[data-theme="light"] .toggle-thumb .sun {
   cursor: pointer;
   transition: all var(--transition-fast);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.section-nav-btn[data-section="all"] {
+  order: -1;
 }
 
 .section-nav-btn svg {
@@ -1142,21 +1160,17 @@ html[data-theme="light"] .toggle-thumb .sun {
 /* ==========================================================================
    12. WEB PROJECTS GRID
    ========================================================================== */
-.projects-section {
+.projects-section,
+.all-works-section {
   max-width: 1280px;
   margin: 0 auto;
   padding: 24px 24px 80px 24px;
   min-height: 50vh;
 }
 
-.projects-controls-section .controls-container {
+.projects-controls-section .controls-container,
+.all-works-controls-section .controls-container {
   justify-content: flex-start;
-}
-
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 28px;
 }
 
 .project-card {
@@ -1661,6 +1675,14 @@ html[data-theme="light"] .badge-report   { background: rgba(5,150,105,.1);   col
 /* ==========================================================================
    14. RESPONSIVE DESIGN ADJUSTMENTS
    ========================================================================== */
+@media (min-width: 641px) and (max-width: 900px) {
+  .maps-grid,
+  .projects-grid,
+  .all-works-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 640px) {
   body {
     font-size: 14px;
@@ -1717,7 +1739,9 @@ html[data-theme="light"] .badge-report   { background: rgba(5,150,105,.1);   col
     padding: 16px 16px 60px 16px;
   }
   
-  .maps-grid {
+  .maps-grid,
+  .projects-grid,
+  .all-works-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
@@ -1763,10 +1787,6 @@ html[data-theme="light"] .badge-report   { background: rgba(5,150,105,.1);   col
     padding: 16px 16px 60px 16px;
   }
 
-  .projects-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
 }
 
 /* Modal responsive: stack vertically on tablet/mobile */

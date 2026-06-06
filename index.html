@@ -43,8 +43,8 @@
   </style>
 
   <!-- Full stylesheet loaded async (non-blocking) -->
-  <link rel="preload" as="style" href="style.min.css?v=4" onload="this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="style.min.css?v=4"></noscript>
+  <link rel="preload" as="style" href="style.min.css?v=7" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.min.css?v=7"></noscript>
 
 
 </head>
@@ -76,7 +76,7 @@
   </header>
 
   <!-- Interactive Controls Bar -->
-  <section class="controls-section">
+  <section class="controls-section" id="maps-controls-section" style="display: none;">
     <div class="controls-container">
       
       <!-- Search Input -->
@@ -119,8 +119,19 @@
     </div>
   </section>
 
+  <!-- All Works Search Controls -->
+  <section class="controls-section all-works-controls-section" id="all-works-controls-section">
+    <div class="controls-container">
+      <div class="search-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="all-works-search-input" class="search-input" placeholder="Search all works..." aria-label="Search all works">
+        <button id="clear-all-works-search" class="clear-search-btn" aria-label="Clear all works search" style="display: none;">&times;</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Showcase Statistics and Info Banner -->
-  <div class="info-banner-container" id="maps-info-banner">
+  <div class="info-banner-container" id="maps-info-banner" style="display: none;">
     <div class="info-stats" id="catalog-stats">
       Loading maps catalog...
     </div>
@@ -130,10 +141,14 @@
     <div class="info-stats" id="projects-catalog-stats"></div>
   </div>
 
+  <div class="info-banner-container" id="all-works-info-banner">
+    <div class="info-stats" id="all-works-catalog-stats"></div>
+  </div>
+
   <!-- Section Navigation Tabs -->
   <div class="section-nav-container">
     <div class="section-nav">
-      <button class="section-nav-btn active" data-section="maps">
+      <button class="section-nav-btn" data-section="maps">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
         Maps
         <span class="section-nav-count" id="maps-nav-count">—</span>
@@ -141,13 +156,18 @@
       <button class="section-nav-btn" data-section="projects">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
         Web Projects
-        <span class="section-nav-count" id="projects-nav-count">0</span>
+        <span class="section-nav-count" id="projects-nav-count">&mdash;</span>
+      </button>
+      <button class="section-nav-btn active" data-section="all">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+        All Works
+        <span class="section-nav-count" id="all-works-nav-count">&mdash;</span>
       </button>
     </div>
   </div>
 
   <!-- Main Map Collection Grid -->
-  <main class="gallery-container">
+  <main class="gallery-container" style="display: none;">
     <div id="maps-grid" class="maps-grid">
       <!-- Skeleton Loaders for initial fetch -->
       <div class="map-card skeleton-card">
@@ -284,6 +304,19 @@
     </div>
   </section>
 
+  <!-- All Works Section -->
+  <section id="all-works-section" class="all-works-section">
+    <div class="all-works-grid" id="all-works-grid"></div>
+    <div id="all-works-empty-state" class="empty-state" style="display: none;">
+      <div class="empty-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      </div>
+      <h2>No Works Found</h2>
+      <p>We couldn't find any works matching your search.</p>
+      <button class="btn btn-primary" id="reset-all-works-search-btn">Clear Search</button>
+    </div>
+  </section>
+
   <!-- Project Detail Modal -->
   <div id="project-modal" class="project-modal-overlay" style="display: none;">
     <div class="project-modal-dialog">
@@ -343,6 +376,6 @@
   </footer>
 
   <!-- App Main Code Script -->
-  <script type="module" src="app.min.js?v=4"></script>
+  <script type="module" src="app.min.js?v=7"></script>
 </body>
 </html>

@@ -330,13 +330,56 @@ function updateStats() {
     DOM.catalogStats.textContent = `Showing ${filteredMaps.length} of ${mapsList.length} matching maps`;
   }
 
-  const mapsNavCount = document.getElementById('maps-nav-count');
-  if (mapsNavCount) mapsNavCount.textContent = mapsList.length;
+  updateSectionNavCounts();
+  applyAllWorksSearch();
 }
 
 /* ==========================================================================
    UI RENDERING (GALLERY GRID & THUMBNAILS)
    ========================================================================== */
+function createMapCard(map, options = {}) {
+  const card = document.createElement('div');
+  card.className = 'map-card';
+  card.mapData = map;
+
+  const title = getMapTitle(map);
+  const filename = getMapFilename(map);
+  const resolvedThumbUrl = getAssetUrl(map.thumbnailUrl);
+  const resolvedHighResUrl = getAssetUrl(map.url);
+  const sizeFormatted = formatSize(map.size);
+  const safeTitle = escapeHtml(title);
+  const safeFilename = escapeHtml(filename);
+  const safeHighResUrl = escapeHtml(resolvedHighResUrl);
+
+  card.innerHTML = `
+    <div class="card-thumbnail-wrapper loading">
+      <img alt="${safeTitle}" class="card-thumbnail-img" ${options.priority ? 'fetchpriority="high"' : 'loading="lazy"'}>
+    </div>
+    <div class="card-body">
+      <h2 class="card-title">${safeTitle}</h2>
+      <div class="card-meta">
+        <div class="card-size-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <span>${sizeFormatted}</span>
+        </div>
+        <button class="card-download-btn" data-url="${safeHighResUrl}" data-filename="${safeFilename}" title="Download Original File">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        </button>
+      </div>
+    </div>
+  `;
+
+  const wrapper = card.querySelector('.card-thumbnail-wrapper');
+  const img = card.querySelector('.card-thumbnail-img');
+  img.onload = () => {
+    img.classList.add('loaded');
+    wrapper.classList.remove('loading');
+  };
+  img.src = resolvedThumbUrl;
+
+  return card;
+}
+
 function renderGallery() {
   if (filteredMaps.length === 0) {
     DOM.mapsGrid.style.display = 'none';
@@ -354,46 +397,8 @@ function renderGallery() {
   const fragment = document.createDocumentFragment();
   
   pageMaps.forEach((map, index) => {
-    const card = document.createElement('div');
-    card.className = 'map-card';
+    const card = createMapCard(map, { priority: startIndex + index < 4 });
     card.setAttribute('data-index', startIndex + index);
-    card.mapData = map; // Store map data for event delegation
-    
-    const title = getMapTitle(map);
-    const filename = getMapFilename(map);
-    const resolvedThumbUrl = getAssetUrl(map.thumbnailUrl);
-    const resolvedHighResUrl = getAssetUrl(map.url);
-    const sizeFormatted = formatSize(map.size);
-    const safeTitle = escapeHtml(title);
-    const safeFilename = escapeHtml(filename);
-    const safeHighResUrl = escapeHtml(resolvedHighResUrl);
-    
-    card.innerHTML = `
-      <div class="card-thumbnail-wrapper loading">
-        <img alt="${safeTitle}" class="card-thumbnail-img" ${startIndex + index < 4 ? 'fetchpriority="high"' : 'loading="lazy"'}>
-      </div>
-      <div class="card-body">
-        <h2 class="card-title">${safeTitle}</h2>
-        <div class="card-meta">
-          <div class="card-size-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-            <span>${sizeFormatted}</span>
-          </div>
-          <button class="card-download-btn" data-url="${safeHighResUrl}" data-filename="${safeFilename}" title="Download Original File">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          </button>
-        </div>
-      </div>
-    `;
-    
-    const wrapper = card.querySelector('.card-thumbnail-wrapper');
-    const img = card.querySelector('.card-thumbnail-img');
-    img.onload = () => {
-      img.classList.add('loaded');
-      wrapper.classList.remove('loading');
-    };
-    img.src = resolvedThumbUrl;
-    
     fragment.appendChild(card);
   });
   
@@ -954,6 +959,8 @@ const WEB_PROJECTS = [
 
 let filteredWebProjects = [...WEB_PROJECTS];
 let projectSearchQuery = '';
+let filteredAllWorks = [];
+let allWorksSearchQuery = '';
 
 function getCategoryBadgeClass(badgeClass) {
   return badgeClass || 'badge-webmap';
@@ -1011,6 +1018,37 @@ function getProjectPreviewMarkup(project, options = {}) {
   `;
 }
 
+function createProjectCard(project) {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+  card.dataset.id = project.id;
+
+  const safeTitle = escapeHtml(project.title);
+  const safeDesc = escapeHtml(project.description);
+  const safeCategory = escapeHtml(project.category);
+  const badgeClass = getCategoryBadgeClass(project.badgeClass);
+
+  card.innerHTML = `
+    <div class="project-thumbnail-wrapper">
+      ${getProjectPreviewMarkup(project)}
+      <span class="project-category-badge ${badgeClass}">${safeCategory}</span>
+    </div>
+    <div class="project-card-body">
+      <h2 class="project-card-title">${safeTitle}</h2>
+      <p class="project-card-desc">${safeDesc}</p>
+      <div class="project-card-footer">
+        <span class="project-card-category-label">${safeCategory}</span>
+        <span class="project-card-arrow">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
+        </span>
+      </div>
+    </div>
+  `;
+
+  card.addEventListener('click', () => openProjectModal(project));
+  return card;
+}
+
 function renderProjects(projects = filteredWebProjects) {
   const grid = document.getElementById('projects-grid');
   if (!grid) return;
@@ -1019,34 +1057,7 @@ function renderProjects(projects = filteredWebProjects) {
   const fragment = document.createDocumentFragment();
 
   projects.forEach(project => {
-    const card = document.createElement('div');
-    card.className = 'project-card';
-    card.dataset.id = project.id;
-
-    const safeTitle = escapeHtml(project.title);
-    const safeDesc = escapeHtml(project.description);
-    const safeCategory = escapeHtml(project.category);
-    const badgeClass = getCategoryBadgeClass(project.badgeClass);
-
-    card.innerHTML = `
-      <div class="project-thumbnail-wrapper">
-        ${getProjectPreviewMarkup(project)}
-        <span class="project-category-badge ${badgeClass}">${safeCategory}</span>
-      </div>
-      <div class="project-card-body">
-        <h2 class="project-card-title">${safeTitle}</h2>
-        <p class="project-card-desc">${safeDesc}</p>
-        <div class="project-card-footer">
-          <span class="project-card-category-label">${safeCategory}</span>
-          <span class="project-card-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
-          </span>
-        </div>
-      </div>
-    `;
-
-    card.addEventListener('click', () => openProjectModal(project));
-    fragment.appendChild(card);
+    fragment.appendChild(createProjectCard(project));
   });
 
   grid.appendChild(fragment);
@@ -1083,6 +1094,90 @@ function clearProjectSearch() {
   if (clearButton) clearButton.style.display = 'none';
   projectSearchQuery = '';
   applyProjectSearch();
+}
+
+function getAllWorks() {
+  return [
+    ...mapsList.map(map => ({
+      kind: 'map',
+      item: map,
+      searchText: normalizeProjectSearchText([
+        'map',
+        getMapTitle(map),
+        getMapFilename(map),
+        map.type
+      ].join(' '))
+    })),
+    ...WEB_PROJECTS.map(project => ({
+      kind: 'project',
+      item: project,
+      searchText: `project ${getProjectSearchText(project)}`
+    }))
+  ];
+}
+
+function renderAllWorks() {
+  const grid = document.getElementById('all-works-grid');
+  const emptyState = document.getElementById('all-works-empty-state');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  filteredAllWorks.forEach((work, index) => {
+    fragment.appendChild(
+      work.kind === 'map'
+        ? createMapCard(work.item, { priority: index < 4 })
+        : createProjectCard(work.item)
+    );
+  });
+
+  grid.appendChild(fragment);
+  grid.style.display = filteredAllWorks.length ? 'grid' : 'none';
+  if (emptyState) emptyState.style.display = filteredAllWorks.length ? 'none' : 'flex';
+}
+
+function applyAllWorksSearch() {
+  const allWorks = getAllWorks();
+  const query = normalizeProjectSearchText(allWorksSearchQuery.trim());
+  const queryTerms = query.split(/\s+/).filter(Boolean);
+  filteredAllWorks = queryTerms.length
+    ? allWorks.filter(work => queryTerms.every(term => work.searchText.includes(term)))
+    : allWorks;
+
+  renderAllWorks();
+
+  const total = allWorks.length;
+  const stats = document.getElementById('all-works-catalog-stats');
+  if (stats) {
+    stats.textContent = filteredAllWorks.length === total
+      ? `Showing all ${total} works`
+      : `Showing ${filteredAllWorks.length} of ${total} matching works`;
+  }
+
+  updateSectionNavCounts();
+}
+
+function updateSectionNavCounts() {
+  const counts = {
+    'maps-nav-count': mapsList.length,
+    'projects-nav-count': WEB_PROJECTS.length,
+    'all-works-nav-count': mapsList.length + WEB_PROJECTS.length
+  };
+
+  Object.entries(counts).forEach(([id, count]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = count;
+  });
+}
+
+function clearAllWorksSearch() {
+  const input = document.getElementById('all-works-search-input');
+  const clearButton = document.getElementById('clear-all-works-search');
+  if (input) input.value = '';
+  if (clearButton) clearButton.style.display = 'none';
+  allWorksSearchQuery = '';
+  applyAllWorksSearch();
 }
 
 function openProjectModal(project) {
@@ -1125,13 +1220,15 @@ function closeProjectModal() {
 
 function initProjects() {
   applyProjectSearch();
-
-  const projectsNavCount = document.getElementById('projects-nav-count');
-  if (projectsNavCount) projectsNavCount.textContent = WEB_PROJECTS.length;
+  applyAllWorksSearch();
+  updateSectionNavCounts();
 
   const projectSearchInput = document.getElementById('project-search-input');
   const clearProjectSearchButton = document.getElementById('clear-project-search');
   const resetProjectSearchButton = document.getElementById('reset-project-search-btn');
+  const allWorksSearchInput = document.getElementById('all-works-search-input');
+  const clearAllWorksSearchButton = document.getElementById('clear-all-works-search');
+  const resetAllWorksSearchButton = document.getElementById('reset-all-works-search-btn');
 
   if (projectSearchInput) {
     projectSearchInput.addEventListener('input', debounce(event => {
@@ -1144,6 +1241,32 @@ function initProjects() {
   }
   if (clearProjectSearchButton) clearProjectSearchButton.addEventListener('click', clearProjectSearch);
   if (resetProjectSearchButton) resetProjectSearchButton.addEventListener('click', clearProjectSearch);
+
+  if (allWorksSearchInput) {
+    allWorksSearchInput.addEventListener('input', debounce(event => {
+      allWorksSearchQuery = event.target.value;
+      if (clearAllWorksSearchButton) {
+        clearAllWorksSearchButton.style.display = allWorksSearchQuery ? 'block' : 'none';
+      }
+      applyAllWorksSearch();
+    }, 300));
+  }
+  if (clearAllWorksSearchButton) clearAllWorksSearchButton.addEventListener('click', clearAllWorksSearch);
+  if (resetAllWorksSearchButton) resetAllWorksSearchButton.addEventListener('click', clearAllWorksSearch);
+
+  const allWorksGrid = document.getElementById('all-works-grid');
+  if (allWorksGrid) {
+    allWorksGrid.addEventListener('click', event => {
+      const downloadButton = event.target.closest('.card-download-btn');
+      if (downloadButton) {
+        triggerDownload(downloadButton.dataset.url, downloadButton.dataset.filename);
+        return;
+      }
+
+      const mapCard = event.target.closest('.map-card');
+      if (mapCard?.mapData) openViewer(mapCard.mapData);
+    });
+  }
 
   const closeProjectBtn = document.getElementById('project-modal-close');
   if (closeProjectBtn) closeProjectBtn.addEventListener('click', closeProjectModal);
@@ -1163,25 +1286,44 @@ function initProjects() {
       const section = btn.dataset.section;
       const mapsGallery = document.querySelector('.gallery-container');
       const projectsSection = document.getElementById('projects-section');
-      const controlsSection = document.querySelector('.controls-section');
+      const allWorksSection = document.getElementById('all-works-section');
+      const controlsSection = document.getElementById('maps-controls-section');
       const infoBanner = document.getElementById('maps-info-banner');
       const projectsControlsSection = document.getElementById('projects-controls-section');
       const projectsInfoBanner = document.getElementById('projects-info-banner');
+      const allWorksControlsSection = document.getElementById('all-works-controls-section');
+      const allWorksInfoBanner = document.getElementById('all-works-info-banner');
 
       if (section === 'maps') {
         mapsGallery.style.display = '';
         projectsSection.style.display = 'none';
+        allWorksSection.style.display = 'none';
         if (controlsSection) controlsSection.style.display = '';
         if (infoBanner) infoBanner.style.display = '';
         if (projectsControlsSection) projectsControlsSection.style.display = 'none';
         if (projectsInfoBanner) projectsInfoBanner.style.display = 'none';
-      } else {
+        if (allWorksControlsSection) allWorksControlsSection.style.display = 'none';
+        if (allWorksInfoBanner) allWorksInfoBanner.style.display = 'none';
+      } else if (section === 'projects') {
         mapsGallery.style.display = 'none';
         projectsSection.style.display = '';
+        allWorksSection.style.display = 'none';
         if (controlsSection) controlsSection.style.display = 'none';
         if (infoBanner) infoBanner.style.display = 'none';
         if (projectsControlsSection) projectsControlsSection.style.display = '';
         if (projectsInfoBanner) projectsInfoBanner.style.display = '';
+        if (allWorksControlsSection) allWorksControlsSection.style.display = 'none';
+        if (allWorksInfoBanner) allWorksInfoBanner.style.display = 'none';
+      } else {
+        mapsGallery.style.display = 'none';
+        projectsSection.style.display = 'none';
+        allWorksSection.style.display = '';
+        if (controlsSection) controlsSection.style.display = 'none';
+        if (infoBanner) infoBanner.style.display = 'none';
+        if (projectsControlsSection) projectsControlsSection.style.display = 'none';
+        if (projectsInfoBanner) projectsInfoBanner.style.display = 'none';
+        if (allWorksControlsSection) allWorksControlsSection.style.display = '';
+        if (allWorksInfoBanner) allWorksInfoBanner.style.display = '';
       }
     });
   });
