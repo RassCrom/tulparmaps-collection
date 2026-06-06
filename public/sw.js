@@ -1,7 +1,7 @@
 /* ==========================================================================
    TulparMaps Service Worker - Offline Caching Strategy
    ========================================================================== */
-const CACHE_VERSION = 'tulparmaps-v3';
+const CACHE_VERSION = 'tulparmaps-v4';
 
 // Install: activate this worker immediately. Runtime caching below avoids
 // hard-coded asset names that differ between source and Vite builds.

@@ -43,8 +43,8 @@
   </style>
 
   <!-- Full stylesheet loaded async (non-blocking) -->
-  <link rel="preload" as="style" href="style.min.css?v=3" onload="this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="style.min.css?v=3"></noscript>
+  <link rel="preload" as="style" href="style.min.css?v=4" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.min.css?v=4"></noscript>
 
 
 </head>
@@ -108,11 +108,26 @@
     </div>
   </section>
 
+  <!-- Web Projects Search Controls -->
+  <section class="controls-section projects-controls-section" id="projects-controls-section" style="display: none;">
+    <div class="controls-container">
+      <div class="search-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="project-search-input" class="search-input" placeholder="Search project title or keyword..." aria-label="Search web projects">
+        <button id="clear-project-search" class="clear-search-btn" aria-label="Clear project search" style="display: none;">&times;</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Showcase Statistics and Info Banner -->
   <div class="info-banner-container" id="maps-info-banner">
     <div class="info-stats" id="catalog-stats">
       Loading maps catalog...
     </div>
+  </div>
+
+  <div class="info-banner-container" id="projects-info-banner" style="display: none;">
+    <div class="info-stats" id="projects-catalog-stats"></div>
   </div>
 
   <!-- Section Navigation Tabs -->
@@ -259,6 +274,14 @@
   <!-- Web Projects Section -->
   <section id="projects-section" class="projects-section" style="display: none;">
     <div class="projects-grid" id="projects-grid"></div>
+    <div id="projects-empty-state" class="empty-state" style="display: none;">
+      <div class="empty-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      </div>
+      <h2>No Projects Found</h2>
+      <p>We couldn't find any web projects matching your search.</p>
+      <button class="btn btn-primary" id="reset-project-search-btn">Clear Search</button>
+    </div>
   </section>
 
   <!-- Project Detail Modal -->
@@ -320,6 +343,6 @@
   </footer>
 
   <!-- App Main Code Script -->
-  <script type="module" src="app.min.js?v=3"></script>
+  <script type="module" src="app.min.js?v=4"></script>
 </body>
 </html>
