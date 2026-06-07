@@ -5,7 +5,7 @@
   "main": "index.html",
   "scripts": {
     "dev": "vite",
-    "build": "node generate-maps.js && cleancss -o style.min.css style.css && terser app.js -o app.min.js -c -m && vite build",
+    "build": "node generate-maps.js && node generate-projects.js && cleancss -o style.min.css style.css && terser app.js -o app.min.js -c -m && vite build",
     "preview": "vite preview",
     "build-maps": "node generate-maps.js",
     "build:assets": "cleancss -o style.min.css style.css && terser app.js -o app.min.js -c -m"

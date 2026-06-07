@@ -1,0 +1,164 @@
+const fs = require('fs');
+const path = require('path');
+
+const PROJECTS_FILE = path.join(__dirname, 'public', 'projects.json');
+const PROJECT_DIR = path.join(__dirname, 'project');
+
+if (!fs.existsSync(PROJECTS_FILE)) {
+  console.error(`Error: projects.json not found at ${PROJECTS_FILE}`);
+  process.exit(1);
+}
+
+// Create project directory if it doesn't exist
+if (!fs.existsSync(PROJECT_DIR)) {
+  fs.mkdirSync(PROJECT_DIR, { recursive: true });
+}
+
+// Read projects
+const projects = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
+
+// Generate HTML for each project
+projects.forEach(project => {
+  const projectFolder = path.join(PROJECT_DIR, project.id);
+  if (!fs.existsSync(projectFolder)) {
+    fs.mkdirSync(projectFolder, { recursive: true });
+  }
+
+  const stackHtml = (project.stack || []).map(tech => `<span class="stack-tag" style="background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 6px; margin-bottom: 6px; display: inline-block;">${tech}</span>`).join('');
+
+  const htmlContent = `<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${project.title} - TulparMaps Project</title>
+  <meta name="description" content="${project.description.replace(/"/g, '&quot;')}">
+  
+  <meta property="og:title" content="${project.title}">
+  <meta property="og:description" content="${project.description.replace(/"/g, '&quot;')}">
+  <meta property="og:type" content="article">
+  
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/style.min.css">
+  
+  <style>
+    body {
+      background-color: #070b13;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .project-header {
+      padding: 60px 24px;
+      text-align: center;
+      background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1), transparent 70%);
+    }
+    .project-title {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .project-meta {
+      color: #8899b0;
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+    .project-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+      flex: 1;
+    }
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .project-text {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 24px;
+    }
+    .live-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 24px;
+      transition: transform 0.2s;
+    }
+    .live-link-btn:hover {
+      transform: translateY(-2px);
+    }
+    .back-link {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      color: #8899b0;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .back-link:hover {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Back to Home
+  </a>
+
+  <div class="project-header">
+    <h1 class="project-title">${project.title}</h1>
+    <div class="project-meta">
+      ${project.category} • ${project.startDate || project.year}
+    </div>
+    <a href="${project.url}" target="_blank" rel="noopener noreferrer" class="live-link-btn">
+      View Live Project
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+    </a>
+  </div>
+
+  <div class="project-container">
+    <h2 class="section-title">Description</h2>
+    <p class="project-text">${project.description}</p>
+    
+    ${project.inspiration ? `
+    <h2 class="section-title">Inspiration</h2>
+    <p class="project-text">${project.inspiration}</p>
+    ` : ''}
+    
+    ${project.idea ? `
+    <h2 class="section-title">Idea</h2>
+    <p class="project-text">${project.idea}</p>
+    ` : ''}
+
+    <h2 class="section-title">Tech Stack</h2>
+    <div>${stackHtml}</div>
+  </div>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(projectFolder, 'index.html'), htmlContent, 'utf8');
+});
+
+console.log(`Successfully generated ${projects.length} project pages!`);
