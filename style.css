@@ -1848,3 +1848,27 @@ html[data-theme="light"] .badge-report   { background: rgba(5,150,105,.1);   col
   height: 100%;
   pointer-events: none;
 }
+
+/* Social Links */
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.social-links a {
+  color: var(--text-muted);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.social-links a:hover {
+  color: var(--accent-color);
+  transform: translateY(-2px);
+}
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
