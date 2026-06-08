@@ -1088,7 +1088,7 @@ function clearAllWorksSearch() {
 
 async function fetchProjects() {
   try {
-    const res = await fetch('./projects.json');
+    const res = await fetch(getAssetUrl('projects.json'));
     WEB_PROJECTS = await res.json();
     filteredWebProjects = [...WEB_PROJECTS];
   } catch (e) {
