@@ -173,10 +173,11 @@ const DOM = {
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  fetchCatalog();
   setupEventListeners();
   registerServiceWorker();
-  fetchProjects().then(initProjects);
+  fetchCatalog()
+    .then(fetchProjects)
+    .then(initProjects);
 });
 
 // Register Service Worker for offline caching
@@ -1088,7 +1089,11 @@ function clearAllWorksSearch() {
 
 async function fetchProjects() {
   try {
-    const res = await fetch(getAssetUrl('projects.json'));
+    const projectsUrl = getAssetUrl('projects.json');
+    const res = await fetch(projectsUrl);
+    if (!res.ok) {
+      throw new Error(`Failed to load ${projectsUrl} (${res.status})`);
+    }
     WEB_PROJECTS = await res.json();
     filteredWebProjects = [...WEB_PROJECTS];
   } catch (e) {
